@@ -16,9 +16,13 @@ public class MainServlet extends HttpServlet {
   @EJB
   private BookingServiceBean bookingService;
 
+  @EJB
+  private ClientServiceBean clientService;
+
   @Override
   protected void doGet(HttpServletRequest req, HttpServletResponse resp)
           throws ServletException, IOException {
+      req.setAttribute("clients", clientService.getAllClients());
       req.setAttribute("bookings", bookingService.getAllBookings());
       req.getRequestDispatcher("/index.jsp").forward(req, resp);
   }
