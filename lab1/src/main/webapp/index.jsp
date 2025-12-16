@@ -87,6 +87,47 @@
             </div>
         </div>
     </div>
+    <div class="card mb-4">
+            <div class="card-header">
+                Добавить бронирование
+            </div>
+            <div class="card-body">
+                <form method="post" action="<%= request.getContextPath() %>/">
+                    <input type="hidden" name="action" value="addBooking">
+                    <div class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Клиент</label>
+                            <select name="clientId" class="form-select" required>
+                                <%
+                                    if (clients != null) {
+                                        for (Client c : clients) {
+                                %>
+                                <option value="<%= c.getId() %>"><%= c.getName() %></option>
+                                <%
+                                        }
+                                    }
+                                %>
+                            </select>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Заезд</label>
+                            <input type="date" name="checkIn" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Выезд</label>
+                            <input type="date" name="checkOut" class="form-control" required>
+                        </div>
+                        <div class="col-md-2">
+                            <label class="form-label">Комната</label>
+                            <input type="text" name="roomNumber" class="form-control" required>
+                        </div>
+                        <div class="col-md-3 d-flex align-items-end">
+                            <button type="submit" class="btn btn-success w-100">Добавить</button>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
 
 </div>
 </body>
