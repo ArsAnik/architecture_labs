@@ -1,4 +1,12 @@
 DROP TABLE IF EXISTS bookings;
+DROP TABLE IF EXISTS clients;
+
+CREATE TABLE clients (
+    id SERIAL PRIMARY KEY,
+    name VARCHAR(255) NOT NULL,
+    phone VARCHAR(50) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE
+);
 
 CREATE TABLE bookings (
     id SERIAL PRIMARY KEY,
@@ -10,6 +18,17 @@ CREATE TABLE bookings (
     booked_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_client FOREIGN KEY (client_id) REFERENCES clients(id) ON DELETE CASCADE
 );
+
+INSERT INTO clients (name, phone, email) VALUES
+    ('Иванов Иван Иванович', '+7 (999) 999-99-91', 'ivanov@mail.com'),
+    ('Петрова Мария Сергеевна', '+7 (999) 999-99-92', 'petrova@mail.com'),
+    ('Сидоров Алексей Петрович', '+7 (999) 999-99-93', 'sidorov@mail.com'),
+    ('Козлова Елена Владимировна', '+7 (999) 999-99-94', 'kozlova@mail.com'),
+    ('Морозов Дмитрий Александрович', '+7 (999) 999-99-95', 'morozov@mail.com'),
+    ('Волкова Анна Игоревна', '+7 (999) 999-99-96', 'volkova@mail.com'),
+    ('Новиков Сергей Викторович', '+7 (999) 999-99-97', 'novikov@mail.com'),
+    ('Лебедева Ольга Николаевна', '+7 (999) 999-99-98', 'lebedeva@mail.com'),
+    ('Соколов Павел Дмитриевич', '+7 (999) 999-99-99', 'sokolov@mail.com');
 
 INSERT INTO bookings (client_id, check_in, check_out, room_number, status, booked_at) VALUES
     (1, '2025-12-10', '2025-12-15', '101', 'created', '2025-12-01 10:30:00'),
