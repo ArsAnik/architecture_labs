@@ -29,5 +29,12 @@ public class ClientServiceBean {
           return em.merge(client);
       }
   }
+
+    public void deleteClient(Integer id) {
+        Client client = em.find(Client.class, id);
+        if (client != null) {
+            em.remove(client);
+        }
+    }
   
 }

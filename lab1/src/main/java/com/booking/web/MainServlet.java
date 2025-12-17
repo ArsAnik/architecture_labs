@@ -65,6 +65,9 @@ public class MainServlet extends HttpServlet {
               existing.setStatus(BookingStatus.valueOf(req.getParameter("status")));
               bookingService.saveBooking(existing);
           }
+      } else if ("deleteClient".equals(action)) {
+          Integer id = Integer.valueOf(req.getParameter("id"));
+          clientService.deleteClient(id);
       }
 
       resp.sendRedirect(req.getContextPath() + "/");

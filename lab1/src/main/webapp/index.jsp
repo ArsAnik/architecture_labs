@@ -69,6 +69,15 @@
                                 <td><%= c.getName() %></td>
                                 <td><%= c.getPhone() %></td>
                                 <td><%= c.getEmail() %></td>
+                                <td>
+                                    <form method="post" action="<%= request.getContextPath() %>/">
+                                        <input type="hidden" name="action" value="deleteClient">
+                                        <input type="hidden" name="id" value="<%= c.getId() %>">
+                                        <button type="submit" class="btn btn-sm btn-danger">
+                                            Удалить
+                                        </button>
+                                    </form>
+                                </td>
                             </tr>
                             <%
                                     }
