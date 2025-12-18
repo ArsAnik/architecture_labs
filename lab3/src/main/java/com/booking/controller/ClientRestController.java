@@ -7,10 +7,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
-import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
 import com.fasterxml.jackson.dataformat.xml.XmlMapper;
-import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
 import org.springframework.http.MediaType;
 
 
@@ -54,22 +51,43 @@ public class ClientRestController {
         return ResponseEntity.ok().build();
     }
 
-    @GetMapping(value = "/xml/bookings", produces = MediaType.APPLICATION_XML_VALUE)
-    public ResponseEntity<String> getAllBookingsXml() throws Exception {
-        List<Booking> bookings = bookingService.getAllBookings();
+    @GetMapping(value = "/xml/clients", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> getAllClientsXml() throws Exception {
+        List<Client> clients = clientService.getAllClients();
 
         XmlMapper xmlMapper = new XmlMapper();
-        xmlMapper.registerModule(new JavaTimeModule());
-        xmlMapper.registerModule(new Hibernate6Module());
-        xmlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
 
         String xmlBody = xmlMapper.writer()
-                .withRootName("bookings")
-                .writeValueAsString(bookings);
+                .withRootName("clients")
+                .writeValueAsString(clients);
 
         String fullXml =
             "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
-            "<?xml-stylesheet type=\"text/xsl\" href=\"/bookings.xsl\"?>\n" +
+            "<?xml-stylesheet type=\"text/xsl\" href=\"/clients.xsl\"?>\n" +
+            xmlBody;
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/xml; charset=UTF-8")
+                .body(fullXml);
+    }
+
+    @GetMapping(value = "/xml/clients/{id}", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> getClientXml(@PathVariable Integer id) throws Exception {
+        Client client = clientService.getClientById(id);
+        if (client == null) {
+            return ResponseEntity.notFound().build();
+        }
+
+        XmlMapper xmlMapper = new XmlMapper();
+
+        String xmlBody = xmlMapper
+                .writer()
+                .withRootName("client")
+                .writeValueAsString(client);
+
+        String fullXml =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<?xml-stylesheet type=\"text/xsl\" href=\"/client.xsl\"?>\n" +
             xmlBody;
 
         return ResponseEntity.ok()
