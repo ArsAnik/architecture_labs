@@ -7,6 +7,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 import java.util.List;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import com.fasterxml.jackson.dataformat.xml.XmlMapper;
+import com.fasterxml.jackson.datatype.hibernate6.Hibernate6Module;
+import org.springframework.http.MediaType;
 
 
 @RestController
@@ -47,6 +52,29 @@ public class ClientRestController {
     public ResponseEntity<?> deleteClient(@PathVariable Integer id) {
         clientService.deleteClient(id);
         return ResponseEntity.ok().build();
+    }
+
+    @GetMapping(value = "/xml/bookings", produces = MediaType.APPLICATION_XML_VALUE)
+    public ResponseEntity<String> getAllBookingsXml() throws Exception {
+        List<Booking> bookings = bookingService.getAllBookings();
+
+        XmlMapper xmlMapper = new XmlMapper();
+        xmlMapper.registerModule(new JavaTimeModule());
+        xmlMapper.registerModule(new Hibernate6Module());
+        xmlMapper.disable(SerializationFeature.WRITE_DATES_AS_TIMESTAMPS);
+
+        String xmlBody = xmlMapper.writer()
+                .withRootName("bookings")
+                .writeValueAsString(bookings);
+
+        String fullXml =
+            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n" +
+            "<?xml-stylesheet type=\"text/xsl\" href=\"/bookings.xsl\"?>\n" +
+            xmlBody;
+
+        return ResponseEntity.ok()
+                .header("Content-Type", "application/xml; charset=UTF-8")
+                .body(fullXml);
     }
 
 }
