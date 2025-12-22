@@ -1,0 +1,61 @@
+services:
+  db:
+    image: postgres:16-alpine
+    container_name: booking-db
+    environment:
+      POSTGRES_DB: bookingdb
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init_database.sql:/docker-entrypoint-initdb.d/init_database.sql
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d bookingdb"]
+      interval: 5s
+      timeout: 5s
+      retries: 30
+      start_period: 40s
+
+  activemq:
+    image: rmohr/activemq:latest
+    container_name: booking-activemq
+    ports:
+      - "61616:61616"
+      - "8161:8161"
+    environment:
+      - ACTIVEMQ_ADMIN_LOGIN=admin
+      - ACTIVEMQ_ADMIN_PASSWORD=admin
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: booking-mailhog
+    ports:
+      - "1025:1025"
+      - "8025:8025"
+
+  app:
+    build: .
+    container_name: booking-app
+    ports:
+      - "8080:8080"
+    depends_on:
+      - db
+      - activemq
+      - mailhog
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bookingdb
+      SPRING_DATASOURCE_USERNAME: postgres
+      SPRING_DATASOURCE_PASSWORD: postgres
+      SPRING_JPA_HIBERNATE_DDL_AUTO: update
+      SPRING_ACTIVEMQ_BROKER_URL: tcp://activemq:61616
+      SPRING_ACTIVEMQ_USER: admin
+      SPRING_ACTIVEMQ_PASSWORD: admin
+      SPRING_MAIL_HOST: mailhog
+      SPRING_MAIL_PORT: 1025
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
+      SPRING_MAIL_PROPERTIES_MAIL_SMTP_STARTTLS_ENABLE: false
+
+volumes:
+  postgres_data:
