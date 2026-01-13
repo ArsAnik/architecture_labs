@@ -2,7 +2,6 @@ package com.booking.service;
 
 import com.booking.entity.*;
 import com.booking.event.AuditEvent;
-import com.booking.repository.AuditChangeDBRepository;
 import com.booking.repository.ClientRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -16,15 +15,12 @@ import java.util.Map;
 @Transactional
 public class ClientService {
     @Autowired private ClientRepository clientRepository;
-    @Autowired private AuditChangeDBRepository auditRepo;
     @Autowired private ApplicationEventPublisher eventPublisher;
 
     public List<Client> getAllClients() { return clientRepository.findAll(); }
     public Client getClientById(Integer id) { return clientRepository.findById(id).orElse(null); }
 
-    public Client saveClient(Client client) {
-        Map<String, Object> oldValues = Map.of();
-        
+    public Client saveClient(Client client) {      
         Client saved = clientRepository.save(client);
         
         Map<String, Object> newValues = Map.of(
@@ -33,7 +29,7 @@ public class ClientService {
             "phone", saved.getPhone()
         );
         
-        auditRepo.save(AuditChangeDB.create("client", saved.getId(), "create", oldValues, newValues));
+        eventPublisher.publishEvent(new AuditEvent(this, "client", saved.getId(), "create", null, newValues));
         return saved;
     }
 
@@ -42,8 +38,7 @@ public class ClientService {
         if (client != null) {
             Map<String, Object> oldValues = Map.of("name", client.getName(), "email", client.getEmail(), "phone", client.getPhone());
             clientRepository.deleteById(id);
-            auditRepo.save(AuditChangeDB.create("client", id, "delete", oldValues, null));
-            eventPublisher.publishEvent(new AuditEvent(this, "client", id, "delete", oldValues));
+            eventPublisher.publishEvent(new AuditEvent(this, "client", id, "delete", oldValues, null));
         }
     }
 }

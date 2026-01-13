@@ -33,16 +33,18 @@ public class AuditChangeDB {
     @Column(name = "changed_at")
     private LocalDateTime changedAt = LocalDateTime.now();
 
-    public static AuditChangeDB create(String entityType, Integer entityId, String action, 
-                                     Map<String, Object> oldValues, Map<String, Object> newValues) {
-        AuditChangeDB record = new AuditChangeDB();
-        record.entityType = entityType.toLowerCase();
-        record.entityId = entityId;
-        record.action = action.toLowerCase();
-        record.oldValues = oldValues != null ? oldValues : Map.of();
-        record.newValues = newValues != null ? newValues : Map.of();
-        return record;
+    public AuditChangeDB(String entityType,
+                         Integer entityId,
+                         String action,
+                         Map<String, Object> oldValues,
+                         Map<String, Object> newValues) {
+        this.entityType = entityType != null ? entityType : null;
+        this.entityId = entityId;
+        this.action = action != null ? action : null;
+        this.oldValues = oldValues != null ? oldValues : Map.of();
+        this.newValues = newValues != null ? newValues : Map.of();
     }
+
 
     public Integer getId() { return id; } public void setId(Integer id) { this.id = id; }
     public String getEntityType() { return entityType; } public void setEntityType(String entityType) { this.entityType = entityType; }

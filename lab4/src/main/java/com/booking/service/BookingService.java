@@ -2,7 +2,6 @@ package com.booking.service;
 
 import com.booking.entity.*;
 import com.booking.event.AuditEvent;
-import com.booking.repository.AuditChangeDBRepository;
 import com.booking.repository.BookingRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationEventPublisher;
@@ -17,7 +16,6 @@ import java.util.Map;
 @Transactional
 public class BookingService {
     @Autowired private BookingRepository bookingRepository;
-    @Autowired private AuditChangeDBRepository auditRepo;
     @Autowired private ApplicationEventPublisher eventPublisher;
 
     public List<Booking> getAllBookings() { return bookingRepository.findBookingsWithClient(); }
@@ -32,9 +30,7 @@ public class BookingService {
             if (existing != null) {
                 oldValues = Map.of("status", existing.getStatus().name(), "room", existing.getRoomNumber(), "checkIn", existing.getCheckIn().toString(), "checkOut", existing.getCheckOut().toString());
             }
-        }
-        
-        if (booking.getId() == null) {
+
             booking.setBookedAt(LocalDateTime.now());
             booking.setStatus(BookingStatus.created);
         }
@@ -48,8 +44,7 @@ public class BookingService {
             "checkOut", saved.getCheckOut().toString()
         );
         
-        auditRepo.save(AuditChangeDB.create("booking", saved.getId(), action, oldValues, newValues));
-        eventPublisher.publishEvent(new AuditEvent(this, "booking", saved.getId(), action, newValues));
+        eventPublisher.publishEvent(new AuditEvent(this, "booking", saved.getId(), action, oldValues, newValues));
         return saved;
     }
 }
