@@ -1,10 +1,10 @@
 package com.booking.service;
 
 import com.booking.entity.*;
-import com.booking.event.AuditEvent;
+import com.booking.config.JmsConfig;
 import com.booking.repository.ClientRepository;
+import com.booking.publisher.AuditMessagePublisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -15,7 +15,7 @@ import java.util.Map;
 @Transactional
 public class ClientService {
     @Autowired private ClientRepository clientRepository;
-    @Autowired private ApplicationEventPublisher eventPublisher;
+    @Autowired private AuditMessagePublisher auditPublisher;
 
     public List<Client> getAllClients() { return clientRepository.findAll(); }
     public Client getClientById(Integer id) { return clientRepository.findById(id).orElse(null); }
@@ -28,8 +28,7 @@ public class ClientService {
             "email", saved.getEmail(),
             "phone", saved.getPhone()
         );
-        
-        eventPublisher.publishEvent(new AuditEvent(this, "client", saved.getId(), "create", null, newValues));
+        auditPublisher.publishAudit("client", saved.getId(), "create", null, newValues);
         return saved;
     }
 
@@ -38,7 +37,7 @@ public class ClientService {
         if (client != null) {
             Map<String, Object> oldValues = Map.of("name", client.getName(), "email", client.getEmail(), "phone", client.getPhone());
             clientRepository.deleteById(id);
-            eventPublisher.publishEvent(new AuditEvent(this, "client", id, "delete", oldValues, null));
+            auditPublisher.publishAudit("client", id, "delete", oldValues, null);
         }
     }
 }

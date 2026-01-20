@@ -1,10 +1,9 @@
 package com.booking.service;
 
 import com.booking.entity.*;
-import com.booking.event.AuditEvent;
 import com.booking.repository.BookingRepository;
+import com.booking.publisher.AuditMessagePublisher;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.ApplicationEventPublisher;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -16,7 +15,7 @@ import java.util.Map;
 @Transactional
 public class BookingService {
     @Autowired private BookingRepository bookingRepository;
-    @Autowired private ApplicationEventPublisher eventPublisher;
+    @Autowired private AuditMessagePublisher auditPublisher;
 
     public List<Booking> getAllBookings() { return bookingRepository.findBookingsWithClient(); }
     public Booking getBookingById(Integer id) { return bookingRepository.findById(id).orElse(null); }
@@ -44,7 +43,7 @@ public class BookingService {
             "checkOut", saved.getCheckOut().toString()
         );
         
-        eventPublisher.publishEvent(new AuditEvent(this, "booking", saved.getId(), action, oldValues, newValues));
+        auditPublisher.publishAudit("booking", saved.getId(), action, oldValues, newValues);
         return saved;
     }
 }

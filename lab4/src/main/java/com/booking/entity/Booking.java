@@ -32,7 +32,12 @@ public class Booking {
     private BookingStatus status;
     
     @Column(name = "booked_at", nullable = false)
-    private LocalDateTime bookedAt;
+    private LocalDateTime bookedAt = LocalDateTime.now();
+
+    public Booking() {
+        this.bookedAt = LocalDateTime.now();
+        this.status = BookingStatus.created;
+    }
 
     public Integer getId() { return id; }
     public void setId(Integer id) { this.id = id; }

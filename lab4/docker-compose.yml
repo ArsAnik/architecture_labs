@@ -3,30 +3,20 @@ services:
     image: postgres:16-alpine
     container_name: booking-db
     environment:
-      POSTGRES_DB: bookingdb
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-bookingdb}
+      POSTGRES_USER: ${POSTGRES_USER:-bookinguser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bookingpass}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./init_database.sql:/docker-entrypoint-initdb.d/init_database.sql
+      - ./.init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U postgres -d bookingdb"]
+      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
       interval: 5s
       timeout: 5s
       retries: 30
       start_period: 40s
-
-  activemq:
-    image: rmohr/activemq:latest
-    container_name: booking-activemq
-    ports:
-      - "61616:61616"
-      - "8161:8161"
-    environment:
-      - ACTIVEMQ_ADMIN_LOGIN=admin
-      - ACTIVEMQ_ADMIN_PASSWORD=admin
 
   mailhog:
     image: mailhog/mailhog:latest
@@ -35,23 +25,52 @@ services:
       - "1025:1025"
       - "8025:8025"
 
+  artemis:
+    image: apache/activemq-artemis:latest-alpine
+    container_name: booking-artemis
+    ports:
+      - "8161:8161"
+      - "61616:61616"
+    environment:
+      ARTEMIS_USER: admin
+      ARTEMIS_PASSWORD: admin
+      ANONYMOUS_LOGIN: "true"
+    healthcheck:
+      test: ["CMD-SHELL", "timeout 5 bash -c '< /dev/tcp/localhost/61616' >/dev/null 2>&1 || exit 1"]
+      interval: 30s
+      timeout: 10s
+      retries: 15
+      start_period: 120s
+    volumes:
+      - artemis_data:/var/lib/artemis-instance
+
   app:
     build: .
     container_name: booking-app
     ports:
       - "8080:8080"
     depends_on:
-      - db
-      - activemq
-      - mailhog
+      db:
+        condition: service_healthy
+      artemis:
+        condition: service_healthy
+      mailhog:
+        condition: service_started
+    env_file: .env
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/bookingdb
-      SPRING_DATASOURCE_USERNAME: postgres
-      SPRING_DATASOURCE_PASSWORD: postgres
+      POSTGRES_DB: ${POSTGRES_DB:-bookingdb}
+      POSTGRES_USER: ${POSTGRES_USER:-bookinguser}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bookingpass}
+      SPRING_DATASOURCE_URL: jdbc:postgresql://db:5432/$${POSTGRES_DB}
+      SPRING_DATASOURCE_USERNAME: $${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: $${POSTGRES_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_ACTIVEMQ_BROKER_URL: tcp://activemq:61616
-      SPRING_ACTIVEMQ_USER: admin
-      SPRING_ACTIVEMQ_PASSWORD: admin
+      SPRING_JPA_SHOW_SQL: true
+      SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
+      SPRING_ARTEMIS_MODE: native
+      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
+      SPRING_ARTEMIS_USER: admin
+      SPRING_ARTEMIS_PASSWORD: admin
       SPRING_MAIL_HOST: mailhog
       SPRING_MAIL_PORT: 1025
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
@@ -59,3 +78,8 @@ services:
 
 volumes:
   postgres_data:
+  artemis_data:
+
+networks:
+  booking-net:
+    driver: bridge

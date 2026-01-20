@@ -1,0 +1,30 @@
+package com.booking.config;
+
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.jms.annotation.EnableJms;
+import org.springframework.jms.core.JmsTemplate;
+import org.springframework.jms.support.converter.MappingJackson2MessageConverter;
+import org.springframework.jms.support.converter.MessageConverter;
+import org.springframework.jms.support.converter.MessageType;
+
+@Configuration
+@EnableJms
+public class JmsConfig {
+
+    public static final String AUDIT_TOPIC = "audit.topic";
+
+    @Bean
+    public MessageConverter jacksonJmsMessageConverter() {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.registerModule(new JavaTimeModule());
+
+        MappingJackson2MessageConverter converter = new MappingJackson2MessageConverter();
+        converter.setObjectMapper(mapper);
+        converter.setTargetType(MessageType.TEXT);
+        converter.setTypeIdPropertyName("type");
+        return converter;
+    }
+}
