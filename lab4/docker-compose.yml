@@ -3,16 +3,16 @@ services:
     image: postgres:16-alpine
     container_name: booking-db
     environment:
-      POSTGRES_DB: ${POSTGRES_DB:-bookingdb}
-      POSTGRES_USER: ${POSTGRES_USER:-bookinguser}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-bookingpass}
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     ports:
       - "5432:5432"
     volumes:
       - postgres_data:/var/lib/postgresql/data
-      - ./.init-database.sql:/docker-entrypoint-initdb.d/init-database.sql
+      - ./init_database.sql:/docker-entrypoint-initdb.d/init_database.sql
     healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U $POSTGRES_USER -d $POSTGRES_DB"]
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
       interval: 5s
       timeout: 5s
       retries: 30
@@ -25,24 +25,22 @@ services:
       - "1025:1025"
       - "8025:8025"
 
-  artemis:
+  activemq:
     image: apache/activemq-artemis:latest-alpine
-    container_name: booking-artemis
+    container_name: booking-activemq
+    environment:
+      ARTEMIS_USER: artemis
+      ARTEMIS_PASSWORD: artemis
+      ANONYMOUS_LOGIN: "true"
     ports:
       - "8161:8161"
       - "61616:61616"
-    environment:
-      ARTEMIS_USER: admin
-      ARTEMIS_PASSWORD: admin
-      ANONYMOUS_LOGIN: "true"
     healthcheck:
-      test: ["CMD-SHELL", "timeout 5 bash -c '< /dev/tcp/localhost/61616' >/dev/null 2>&1 || exit 1"]
-      interval: 30s
+      test: ["CMD-SHELL", "timeout 10 bash -c 'cat < /dev/null > /dev/tcp/localhost/61616'"]
+      interval: 20s
       timeout: 10s
       retries: 15
-      start_period: 120s
-    volumes:
-      - artemis_data:/var/lib/artemis-instance
+      start_period: 90s
 
   app:
     build: .
@@ -52,7 +50,7 @@ services:
     depends_on:
       db:
         condition: service_healthy
-      artemis:
+      activemq:
         condition: service_healthy
       mailhog:
         condition: service_started
@@ -65,12 +63,14 @@ services:
       SPRING_DATASOURCE_USERNAME: $${POSTGRES_USER}
       SPRING_DATASOURCE_PASSWORD: $${POSTGRES_PASSWORD}
       SPRING_JPA_HIBERNATE_DDL_AUTO: update
-      SPRING_JPA_SHOW_SQL: true
       SPRING_JPA_PROPERTIES_HIBERNATE_DIALECT: org.hibernate.dialect.PostgreSQLDialect
       SPRING_ARTEMIS_MODE: native
-      SPRING_ARTEMIS_BROKER_URL: tcp://artemis:61616
-      SPRING_ARTEMIS_USER: admin
-      SPRING_ARTEMIS_PASSWORD: admin
+      SPRING_ARTEMIS_BROKER_URL: tcp://activemq:61616
+      SPRING_ARTEMIS_USER: artemis
+      SPRING_ARTEMIS_PASSWORD: artemis
+      SPRING_ACTIVEMQ_BROKER_URL: tcp://activemq:61616
+      SPRING_ARTEMIS_CLIENT_ID: booking-app
+
       SPRING_MAIL_HOST: mailhog
       SPRING_MAIL_PORT: 1025
       SPRING_MAIL_PROPERTIES_MAIL_SMTP_AUTH: false
@@ -78,8 +78,3 @@ services:
 
 volumes:
   postgres_data:
-  artemis_data:
-
-networks:
-  booking-net:
-    driver: bridge

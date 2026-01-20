@@ -24,14 +24,13 @@ public class BookingService {
         String action = booking.getId() == null ? "create" : "update";
         Map<String, Object> oldValues = Map.of();
         
-        if (booking.getId() != null) {
-            Booking existing = bookingRepository.findById(booking.getId()).orElse(null);
-            if (existing != null) {
-                oldValues = Map.of("status", existing.getStatus().name(), "room", existing.getRoomNumber(), "checkIn", existing.getCheckIn().toString(), "checkOut", existing.getCheckOut().toString());
-            }
-
+        if (booking.getId() == null) {
             booking.setBookedAt(LocalDateTime.now());
             booking.setStatus(BookingStatus.created);
+        }
+        else{
+            Booking existing = bookingRepository.findById(booking.getId()).orElse(null);
+            oldValues = Map.of("status", existing.getStatus().name(), "room", existing.getRoomNumber(), "checkIn", existing.getCheckIn().toString(), "checkOut", existing.getCheckOut().toString());
         }
         
         Booking saved = bookingRepository.save(booking);

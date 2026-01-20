@@ -17,7 +17,8 @@ public class MailJmsListener {
 
     @JmsListener(
         destination = JmsConfig.AUDIT_TOPIC,
-        subscription = "mail-sub"
+        subscription = "mail-sub",
+        containerFactory = "topicListenerFactory"
     )
     public void onMessage(AuditChangeDB audit) {
         if (!validator.isValid(audit)) return;
